@@ -1,247 +1,639 @@
 # tracky
 
-Tracky is a Windows screen time tracker written primarily in Python. It records
-only the application that owns the foreground window. For supported browsers it
-also attempts to read the visible address bar through Windows UI Automation.
-Tracking history, labels, categories, colors, and preferences are stored locally
-in SQLite under `%LOCALAPPDATA%\Tracky`.
+Tracky is a Windows screen time tracker written primarily in Python. It records only the application that owns the foreground window. For supported browsers it also attempts to read the visible address bar through Windows UI Automation. Tracking history, labels, categories, colors, and preferences are stored locally in SQLite under `%LOCALAPPDATA%\Tracky`.
 
-## What is in this revision
+<p align="center">
+  <img src="assets/media/1.png" alt="Tracky home screen" width="900">
+</p>
 
-- Obsidian-inspired dark mode with Nunito typography and several purple shades.
-- Frameless rounded normal window with no drop shadow, page fades, custom navigation
-  icons, a rounded animated sidebar marker, and a hand-painted outer shell.
-- The calendar card now physically clips its scroll content to the rounded
-  outline without clipping the curved border itself, and the outer shell leaves
-  a visible one-pixel border around every side of the window, including the sidebar.
-- Maximize now uses Qt's native Windows maximize path, which fills the work area
-  while keeping the taskbar visible. The custom shell and sidebar become square
-  while maximized, and Windows 11 DWM rounding is disabled without forcing a
-  fragile native window region.
-- The Labeling sidebar icon uses a softer single-line rounded folder contour.
-- The sidebar marker now repaints its previous position every animation frame to
-  avoid the thin purple trails shown in the earlier build.
-- The Home calendar includes previous week, Reset, next week, zoom out, and zoom
-  in controls. Reset returns directly to the week containing today.
-- Calendar zoom is persisted in SQLite. Ctrl+wheel over the graph zooms in or
-  out. Shift+wheel over the graph scrolls the main Home page instead. If Ctrl and
-  Shift are both held, Tracky uses whichever modifier was pressed first.
-- The calendar hover card is a single child overlay inside the visible graph
-  viewport instead of a native tooltip window. This avoids the stale layered
-  cards that could appear while moving the cursor quickly.
-- Website hover names show only the domain, never a page path or query string.
-- Activity blocks have a tiny visual gap at confirmed switches so boundaries are
-  easy to see.
-- Foreground switches must remain stable for 60 seconds before Tracky commits a
-  new activity. Shorter switches are folded back into the prior activity so
-  brief Alt-Tab and browser-tab changes do not fragment the timeline.
-- Fresh installs start with exactly two category folders: `Misc` in Tracky purple
-  and `Browsing` in gray. Browser processes without a readable URL default to
-  Browsing.
-- Browser URL validation rejects accidental one-word UI Automation captures such
-  as `colour` or `label`. Existing invalid web rows are converted back to generic
-  browser activity so their tracked time is preserved. Localhost, local test
-  domains, and IP addresses remain supported.
-- A website remains in Browsing for its first ten cumulative minutes. At the
-  exact ten-minute threshold the calendar splits the session. Later time becomes
-  that domain's own activity and defaults to Misc until the user organizes it.
-- Labeling shows collapsible category folders, including empty Misc and Browsing.
-  Activities with less than one cumulative minute stay tracked but are hidden from
-  this page. Website URL detail text is capped at 65 characters. Right-click a
-  custom category folder to delete it; Tracky moves its activities back to Misc
-  first so no tracked history is lost. Misc and Browsing cannot be deleted.
-- The category creator is a frameless popup with Name, ten color circles, and a
-  Custom Colors HEX field. Save and Cancel use Tracky's purple styling.
-- Home uses the headings `Daily total` and `Stats`. Daily Average and Weekly %
-  Difference share the same purple emphasis. Top Category uses that category's
-  saved color.
-- Settings keeps the GitHub star link plus the two-line startup preference:
-  `Launch at startup` and `Runs in the background`
-- Windows executable metadata uses the display name `tracky`, while the Python
-  UI and tracking threads use descriptive diagnostic names.
-- Startup is enabled by default using the current Windows user's Run registry
-  key. No administrator permission is required.
-- The included Inno Setup recipe performs a conventional Program Files install
-  and registers Tracky machine-wide in Windows Settings > Apps > Installed apps.
+## Installation
 
-## Project layout
+### Recommended: download the installer
 
-```text
-|-- main.py                    # Development and packaged entry point
-|-- build_installer.bat        # Build the Windows setup package
-|-- run_dev.bat                # Run Tracky from source
-|-- requirements.txt
-|-- tracky.spec                # PyInstaller recipe
-|-- installer.iss              # Inno Setup recipe
-|-- version_info.txt           # Windows EXE version metadata
-|-- assets/
-|   |-- tracky.ico
-|   `-- tracky.png
-`-- tracky/
-    |-- browser.py             # Browser address-bar detection
-    |-- database.py            # SQLite sessions, settings, labels, categories
-    |-- font_loader.py         # Nunito loading and first-run cache
-    |-- icons.py               # EXE icons, favicons, custom icons
-    |-- startup.py             # Windows startup registration
-    |-- tracker.py             # Foreground-window tracking and switch debounce
-    |-- styles.py              # Obsidian-style purple theme
-    |-- widgets.py             # Calendar and reusable custom widgets
-    |-- main_window.py         # Navigation and rounded window shell
-    `-- pages/
-        |-- home.py
-        |-- labeling.py
-        `-- settings.py
-```
+If you just want to use Tracky, you do **not** need Python, Git, Inno Setup, or any development tools.
 
-## Python version
+Download the latest stable Windows installer from:
 
-The build scripts target 64-bit Python 3.14. PySide6 and PyInstaller versions in
-`requirements.txt` are selected for Python 3.14 support.
+**[Download Tracky from GitHub Releases](https://github.com/Jestermax-Haskeller/tracky/releases/tag/Stable)**
 
-## Run from source on Windows
+Download `TrackySetup.exe`, open it, approve the Windows administrator prompt, and complete the setup wizard.
 
-1. Install 64-bit Python 3.14 from python.org.
-2. During Python setup, install the Python Launcher (`py`).
-3. Extract this project to a writable folder.
-4. Double-click `run_dev.bat`.
-
-The script creates `.venv`, installs dependencies, and starts `main.py`.
-
-Manual equivalent:
-
-```bat
-py -3.14 -m venv .venv
-.venv\Scripts\activate
-python -m pip install -r requirements.txt
-python main.py
-```
-
-## Build the Windows installer
-
-Tracky is distributed through its Windows setup package rather than as a portable
-EXE. The build script creates the executable internally, packages it with Inno
-Setup, then removes the temporary PyInstaller output so the installer remains the
-only release artifact.
-
-1. Install 64-bit Python 3.14 from python.org, including the Python Launcher.
-2. Install Inno Setup 6. With winget you can use:
-
-```bat
-winget install JRSoftware.InnoSetup
-```
-
-3. Run:
-
-```bat
-build_installer.bat
-```
-
-The script creates `.venv` when needed, installs the pinned build dependencies,
-runs PyInstaller, locates Inno Setup in the current-user installation, Program
-Files, or PATH, and builds:
-
-```text
-installer_dist\TrackySetup.exe
-```
-
-The temporary `build\` and `dist\` folders are removed after a successful setup
-build. `TrackySetup.exe` opens automatically. Complete that wizard to install
-Tracky under Program Files and register it in:
+Tracky will then be installed normally on Windows and will appear under:
 
 ```text
 Settings > Apps > Installed apps
 ```
 
-The installer requests administrator permission because it performs a normal
-machine-wide Program Files installation and uninstall registration.
+After installation, search for **tracky** from the Windows Start menu to launch it.
 
-## How website tracking works
+## Build Tracky yourself
 
-There is no universal Windows API that directly returns another application's
-current browser URL. Tracky uses Windows UI Automation to inspect the address bar
-of Chrome, Edge, Brave, Firefox, Opera, Opera GX, and Vivaldi.
+Tracky is completely open source, so you can also clone the repository and build the Windows installer yourself.
 
-Browser accessibility trees can change between browser releases. If URL reading
-fails, application-level foreground tracking still works. That browser process
-defaults to the gray Browsing folder.
+### Requirements
 
-### The 10-minute Browsing rule
+Tracky currently targets:
 
-Tracky stores website sessions by domain, then applies the Browsing rule when it
-prepares calendar segments:
+* Windows 10 or Windows 11
+* 64-bit Python 3.14
+* Inno Setup 6
+* Git
 
-1. It calculates how much time that domain accumulated before the displayed
-   range.
-2. The first 600 cumulative seconds are assigned to Browsing.
-3. If one session crosses second 600, Tracky splits that visual session at the
-   exact timestamp.
-4. Time after that is represented by the domain only and defaults to Misc until
-   the user chooses another category.
+You can install the required development tools with `winget`:
 
-The full latest URL remains available as secondary context on the Labeling page,
-but it is shortened to 65 characters in the row so it cannot push controls off
-screen.
+```powershell
+winget install -e --id Python.Python.3.14
+winget install -e --id JRSoftware.InnoSetup
+winget install -e --id Git.Git
+```
 
-## Categories
+Clone the repository:
 
-A brand-new database contains only:
+```powershell
+git clone https://github.com/Jestermax-Haskeller/tracky.git
+cd tracky
+```
 
-- `Misc`, colored `#9B5CFF`.
-- `Browsing`, colored `#85818E`.
+Build the installer:
 
-Use `+ Category` in Labeling to create another folder. The popup provides red,
-orange, yellow, light green, dark green, teal, light blue, dark blue, purple, and
-baby pink presets, or a custom six-digit HEX value. Right-click any custom
-category folder and choose `Delete category` to remove it. Its activities are
-reassigned to Misc before the category is deleted.
+```powershell
+.\build_installer.bat
+```
 
-Older databases are migrated from the previous built-in `Other` folder to
-`Misc` without losing entity assignments. Existing user-created categories are
-preserved.
+The build script handles the rest automatically. It creates a Python virtual environment, installs the dependencies from `requirements.txt`, builds Tracky with PyInstaller, finds Inno Setup, creates the Windows setup package, and removes the temporary PyInstaller output afterward.
 
-## Screen time, switches, and idle behavior
+The finished installer will be placed at:
 
-Only the foreground window is counted. Tracky does not count its own window.
-After two minutes without keyboard or mouse input, the tracker ends the current
-session at the user's last real input time.
+```text
+installer_dist\TrackySetup.exe
+```
 
-When focus changes to another activity, Tracky waits for that exact new activity
-to remain focused for 60 seconds. If the user returns sooner, the short switch is
-ignored and the original session is extended across it. If the new activity
-remains focused for at least 60 seconds, Tracky backdates the confirmed session
-to the real switch time, so screen-time totals stay accurate.
+The setup wizard opens automatically after a successful build.
 
-## Favicons and privacy
+### Run the Python source directly
 
-Tracky attempts a 128px Google favicon first, then a site's Apple touch icon,
-then the traditional `/favicon.ico`. This improves icon quality where the site
-publishes a larger image.
+If you are developing Tracky and want to run it without creating an installer:
 
-Network favicon requests reveal the requested domain to the remote server. If
-you prefer no favicon network requests, remove the network fallback code in
-`tracky/icons.py` and use manual icons instead.
+```powershell
+.\run_dev.bat
+```
 
-## Nunito and offline use
+This creates the local virtual environment if required, installs dependencies, and launches `main.py`.
 
-Tracky does not bundle font binaries in this source archive. At startup it:
+## Project structure
 
-1. Checks whether Windows already has Nunito.
-2. Checks `%LOCALAPPDATA%\Tracky\fonts` for its cached copy.
-3. If needed, downloads the Nunito variable font into Tracky's private cache.
-4. Falls back to Segoe UI if the first launch is offline.
+```text
+tracky/
+│
+├── assets/
+│   ├── media/
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   └── 3.png
+│   ├── tracky.ico
+│   └── tracky.png
+│
+├── tracky/
+│   ├── pages/
+│   │   ├── __init__.py
+│   │   ├── home.py
+│   │   ├── labeling.py
+│   │   └── settings.py
+│   │
+│   ├── __init__.py
+│   ├── browser.py
+│   ├── database.py
+│   ├── font_loader.py
+│   ├── icons.py
+│   ├── main_window.py
+│   ├── startup.py
+│   ├── styles.py
+│   ├── tracker.py
+│   ├── utils.py
+│   └── widgets.py
+│
+├── .gitignore
+├── build_installer.bat
+├── installer.iss
+├── LICENSE.txt
+├── main.py
+├── README.md
+├── requirements.txt
+├── run_dev.bat
+├── tracky.spec
+└── version_info.txt
+```
 
-The interface uses normal, medium, semibold, bold, and extra-bold weights.
+### What each part does
 
-## Learning notes
+`main.py` is the entry point for both development and the packaged application. It starts Qt, loads the theme and fonts, opens the local database, creates the main window, and starts Tracky.
 
-The source is intentionally commented around each major section and design
-choice. Good places to start are:
+`tracky/tracker.py` contains the foreground application tracking loop and Windows idle detection.
 
-- `tracker.py` for the background thread and one-minute focus-switch debounce.
-- `database.py` for SQLite access, default folders, and the ten-minute site split.
-- `widgets.py` for custom sidebar icons, hover overlays, painting, wheel controls,
-  animations, and the rounded application shell.
-- `main_window.py` for navigation and taskbar-respecting maximize behavior.
-- `pages/labeling.py` for the frameless category popup and folder grouping.
-- `startup.py` for a per-user Windows startup registry entry.
-- `installer.iss` for the Windows installation and uninstall registration.
+`tracky/browser.py` handles supported browser address-bar detection using Windows UI Automation.
+
+`tracky/database.py` owns the SQLite database, session history, labels, categories, preferences, migrations, and the data used to build the Home calendar.
+
+`tracky/widgets.py` contains the custom calendar and reusable interface components.
+
+`tracky/pages/` contains the Home, Labeling, and Settings pages.
+
+`tracky/icons.py` handles application icons, website favicons, cached icons, and custom user-selected icons.
+
+`tracky/styles.py` contains Tracky's Obsidian-inspired dark theme and purple styling.
+
+`tracky/startup.py` manages the Windows launch-at-startup preference.
+
+`build_installer.bat`, `tracky.spec`, and `installer.iss` are the Windows release build pipeline.
+
+<p align="center">
+  <img src="assets/media/2.png" alt="Tracky screen time interface" width="900">
+</p>
+
+## How Tracky works
+
+Tracky is designed around one simple rule:
+
+> **Only the window you are actively focused on counts as screen time.**
+
+It does not add up every application that happens to be open in the background.
+
+### 1. Reading the foreground application
+
+Tracky's tracking loop runs on a lightweight background Python thread while the PySide6 interface remains on Qt's main UI thread.
+
+Approximately once per second, Tracky asks Windows which window currently owns the foreground using the Win32 API:
+
+```text
+GetForegroundWindow
+```
+
+It then retrieves the process ID that owns that window with:
+
+```text
+GetWindowThreadProcessId
+```
+
+From that process ID, Tracky uses `psutil` to obtain information such as:
+
+```text
+Process name
+Executable path
+```
+
+The current window title is read with the normal Win32 window text APIs.
+
+Tracky also checks its own process ID and deliberately refuses to count its own window, so checking your screen-time statistics does not increase Tracky's own screen time.
+
+### 2. Applications become entities
+
+Normal applications are represented internally using an entity key such as:
+
+```text
+app:minecraft.exe
+app:code.exe
+app:spotify.exe
+```
+
+This gives Tracky a stable identifier that can be connected to a label, icon, and category without modifying the original session history.
+
+For example:
+
+```text
+app:minecraft.exe
+        │
+        ├── Label: Minecraft
+        ├── Category: Gaming
+        └── Color: category color
+```
+
+### 3. Browser URL tracking
+
+When the focused process belongs to a supported browser, Tracky performs an additional check.
+
+Supported browser processes currently include Chrome, Edge, Brave, Firefox, Opera, Opera GX, and Vivaldi.
+
+Windows does not provide a normal API that says "give me the URL currently open in Chrome", so Tracky uses **Windows UI Automation** through `pywinauto`.
+
+Tracky inspects the accessibility tree of the foreground browser window and searches for controls that look like the browser address bar.
+
+It prefers controls with names or automation IDs similar to:
+
+```text
+Address and search bar
+Address bar
+Search or enter address
+urlbar-input
+omnibox
+```
+
+If those are unavailable, Tracky only considers suitable edit controls near the top browser chrome instead of blindly accepting every text box on a webpage.
+
+The result then goes through Tracky's URL validation.
+
+Invalid values are discarded. This prevents accidental accessibility captures such as random webpage text from becoming fake websites.
+
+Valid public domains are accepted, along with supported local development addresses such as:
+
+```text
+localhost
+127.0.0.1
+192.168.1.10
+```
+
+A valid website is stored under a domain entity such as:
+
+```text
+web:github.com
+web:youtube.com
+web:localhost
+```
+
+The calendar and hover cards use the domain rather than exposing long paths, query strings, or page URLs.
+
+If Tracky cannot reliably obtain a browser URL, it still tracks the browser itself instead of losing the screen time.
+
+### 4. Short switches are filtered
+
+A common problem with screen-time trackers is creating hundreds of tiny entries when someone quickly Alt-Tabs between windows.
+
+Tracky avoids that with a **60 second confirmation period**.
+
+If you switch from one activity to another, the new activity becomes a pending switch.
+
+If you return to the original activity before 60 seconds have passed, Tracky treats the interruption as temporary and folds it back into the original session.
+
+For example:
+
+```text
+VS Code
+  │
+  ├── Chrome for 18 seconds
+  │
+VS Code
+```
+
+becomes:
+
+```text
+VS Code
+```
+
+If Chrome remains focused for at least 60 seconds, Tracky confirms the switch and backdates the new session to the real moment the switch happened.
+
+This keeps totals accurate without filling the calendar with tiny fragments.
+
+### 5. Idle time is removed
+
+Tracky also checks how long it has been since Windows received keyboard or mouse input using:
+
+```text
+GetLastInputInfo
+```
+
+After two minutes of inactivity, Tracky stops counting the current activity.
+
+It adjusts the end of the session back to the actual last-input time, so the two-minute detection delay is not added to your screen-time total.
+
+### 6. Website Browsing rule
+
+New Tracky databases begin with two built-in categories:
+
+```text
+Misc
+Browsing
+```
+
+`Misc` is the default purple category.
+
+`Browsing` is gray and is used automatically for general browser usage.
+
+A website remains part of **Browsing** during its first 10 cumulative minutes of tracked use.
+
+If a domain reaches 10 minutes in the middle of a session, Tracky splits the calendar activity at the exact 600-second point.
+
+For example:
+
+```text
+0m                    10m                   20m
+|----------------------|---------------------|
+       Browsing                  github.com
+```
+
+After the threshold, the domain becomes its own activity and can be labeled or assigned to another category by the user.
+
+The original session history remains intact. This rule is applied while Tracky prepares the data used by the calendar and labeling interface.
+
+## Labeling and categories
+
+The Labeling page lets activities be organized without changing the underlying tracking records.
+
+Applications can be renamed:
+
+```text
+minecraft.exe  ->  Minecraft
+Code.exe       ->  Programming
+```
+
+Activities can also be assigned to color-coded category folders.
+
+Categories can be collapsed to make large activity lists easier to manage.
+
+Custom categories can be deleted by right-clicking the folder. Before the category is removed, Tracky moves every activity assigned to it back to `Misc`, so deleting a category never deletes screen-time history.
+
+`Misc` and `Browsing` are built-in and cannot be deleted.
+
+Application icons come from the Windows executable where possible. Website icons are cached separately, and users can replace an activity icon with their own image.
+
+Activities with less than one cumulative minute are still stored in the database, but they are hidden from the Labeling page to reduce clutter.
+
+<p align="center">
+  <img src="assets/media/3.png" alt="Tracky labeling and categories interface" width="900">
+</p>
+
+## SQLite database
+
+Tracky does not use a remote server.
+
+All tracking history is stored locally using Python's built-in **SQLite** support.
+
+The main database is stored at:
+
+```text
+%LOCALAPPDATA%\Tracky\tracky.sqlite3
+```
+
+For a normal Windows account that resolves to something similar to:
+
+```text
+C:\Users\YourName\AppData\Local\Tracky\tracky.sqlite3
+```
+
+### Why SQLite?
+
+SQLite is useful for Tracky because it is:
+
+* Local
+* Serverless
+* Fast
+* Included with Python
+* Stored in a single database file
+* Easy to inspect while learning
+* Suitable for concurrent lightweight reads and writes
+
+Tracky enables:
+
+```sql
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=ON;
+```
+
+**WAL**, or Write-Ahead Logging, allows the background tracker to write session updates while the interface reads statistics with much less contention.
+
+Foreign keys keep relationships such as category assignments consistent.
+
+Tracky opens short-lived database connections for individual operations instead of sharing one SQLite connection between the Qt UI thread and tracking thread.
+
+### Database structure
+
+The database contains five main tables.
+
+#### `sessions`
+
+This is the actual screen-time history.
+
+```sql
+CREATE TABLE sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at REAL NOT NULL,
+    ended_at REAL NOT NULL,
+    duration REAL NOT NULL DEFAULT 0,
+    process_name TEXT NOT NULL,
+    process_path TEXT,
+    window_title TEXT,
+    url TEXT,
+    domain TEXT,
+    entity_key TEXT NOT NULL
+);
+```
+
+Each confirmed activity session stores its start and end timestamps, duration, process information, browser information when available, and the entity it belongs to.
+
+Tracky does **not** create a new database row every second.
+
+When an activity begins, one row is inserted:
+
+```text
+started_at = current time
+ended_at   = current time
+duration   = 0
+```
+
+As that same activity continues, Tracky updates that row:
+
+```sql
+UPDATE sessions
+SET ended_at = ?,
+    duration = MAX(0, ? - started_at)
+WHERE id = ?;
+```
+
+This keeps the database much smaller than storing one sample every second.
+
+Indexes are also created for time and entity lookups:
+
+```sql
+CREATE INDEX idx_sessions_time
+ON sessions(started_at, ended_at);
+
+CREATE INDEX idx_sessions_entity
+ON sessions(entity_key);
+```
+
+These help the weekly calendar and statistics find relevant sessions efficiently.
+
+#### `labels`
+
+```sql
+CREATE TABLE labels (
+    entity_key TEXT PRIMARY KEY,
+    label TEXT NOT NULL,
+    custom_icon TEXT
+);
+```
+
+This stores a user's custom display name and optional icon for an activity.
+
+The session itself is not renamed.
+
+For example, the database can keep:
+
+```text
+app:minecraft.exe
+```
+
+while the interface displays:
+
+```text
+Minecraft
+```
+
+#### `categories`
+
+```sql
+CREATE TABLE categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    color TEXT NOT NULL,
+    is_builtin INTEGER NOT NULL DEFAULT 0
+);
+```
+
+This stores category folders and their colors.
+
+Fresh installs start with:
+
+```text
+Misc
+Browsing
+```
+
+The `is_builtin` flag protects those required categories from deletion.
+
+#### `entity_categories`
+
+```sql
+CREATE TABLE entity_categories (
+    entity_key TEXT PRIMARY KEY,
+    category_id INTEGER NOT NULL,
+    FOREIGN KEY(category_id) REFERENCES categories(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+);
+```
+
+This table connects an application or website to a category.
+
+Keeping this relationship separate means the original tracking history does not have to be rewritten whenever the user reorganizes an activity.
+
+#### `settings`
+
+```sql
+CREATE TABLE settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+```
+
+This stores small persistent preferences such as calendar zoom and interface configuration.
+
+Settings therefore survive application restarts without requiring another configuration file format.
+
+### How the Home page gets its data
+
+When Tracky displays a week, it requests only sessions that overlap the visible date range:
+
+```sql
+SELECT *
+FROM sessions
+WHERE ended_at > ?
+  AND started_at < ?
+ORDER BY started_at ASC;
+```
+
+Sessions that begin before or finish after the requested range are clipped to the visible range before totals are calculated.
+
+Tracky then resolves:
+
+```text
+Session
+  ↓
+Entity
+  ↓
+User label
+  ↓
+Category
+  ↓
+Category color
+  ↓
+Calendar block / statistics
+```
+
+Website sessions additionally pass through the 10-minute Browsing rule before they are rendered.
+
+This separation means the raw tracking history stays simple while labels, categories, and presentation can evolve independently.
+
+## Technology
+
+Tracky is primarily Python and uses:
+
+| Technology     | Purpose                                                 |
+| -------------- | ------------------------------------------------------- |
+| Python 3.14    | Main application language                               |
+| PySide6 / Qt 6 | Windows interface, animations, widgets, painting        |
+| SQLite         | Local screen-time history and preferences               |
+| Win32 APIs     | Foreground-window and idle-time detection               |
+| psutil         | Process names and executable paths                      |
+| pywinauto      | Windows UI Automation for browser address bars          |
+| PyInstaller    | Packages the Python application as a Windows executable |
+| Inno Setup     | Creates the normal Windows setup installer              |
+
+## Privacy
+
+Tracky is designed to keep your screen-time history on your own computer.
+
+**We do not collect your screen-time data.**
+
+There is no Tracky account, cloud database, analytics service, telemetry backend, or tracking-history server.
+
+Your activity history remains in:
+
+```text
+%LOCALAPPDATA%\Tracky\tracky.sqlite3
+```
+
+Tracky does not record keyboard contents, passwords, mouse clicks, screenshots, or every application running on the machine. It records the foreground application and, where supported, the visible browser address information needed to determine the active domain.
+
+The core tracking system, SQLite database, labeling, categories, statistics, and calendar all work locally without a cloud connection.
+
+Tracky may make optional network requests for website favicons and, if Nunito is not already available on the computer, its first-run font cache. These requests are not used to upload screen-time history. The tracking database itself is never sent as part of those requests.
+
+All Tracky source code is publicly available in this repository, so its behavior can be inspected, modified, or built independently.
+
+Tracky is released under the **MIT License**.
+
+### Verify your installer with SHA-256
+
+A SHA-256 checksum lets you verify that the installer you downloaded is exactly the same file that was published in the release.
+
+After downloading `TrackySetup.exe`, open PowerShell in the download folder and run:
+
+```powershell
+Get-FileHash .\TrackySetup.exe -Algorithm SHA256
+```
+
+PowerShell will display something like:
+
+```text
+Algorithm : SHA256
+Hash      : <SHA256 HASH>
+Path      : C:\...\TrackySetup.exe
+```
+
+Compare that hash with the SHA-256 value published alongside the matching Tracky release.
+
+If the two hashes are identical, the installer has not changed since that checksum was generated.
+
+You can generate the checksum for a release build yourself with the same command:
+
+```powershell
+Get-FileHash .\installer_dist\TrackySetup.exe -Algorithm SHA256
+```
+
+## License
+
+Tracky is free and open source software licensed under the [MIT License](LICENSE.txt).
+
+Source code: **https://github.com/Jestermax-Haskeller/tracky**
+
+Stable releases: **https://github.com/Jestermax-Haskeller/tracky/releases/tag/Stable**
