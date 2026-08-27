@@ -127,7 +127,7 @@ Get-FileHash .\TrackySetup.exe -Algorithm SHA256
 ```
 
 Latest SHA-256 checksum release:
-`83B66FF57C60F83F44E843FD07CBF70FA233A4D5EAD6E2D2DE1E268DEA68172E`
+``
 
 ## License
 
