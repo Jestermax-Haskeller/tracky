@@ -6,64 +6,6 @@ also attempts to read the visible address bar through Windows UI Automation.
 Tracking history, labels, categories, colors, and preferences are stored locally
 in SQLite under `%LOCALAPPDATA%\Tracky`.
 
-## What is in this revision
-
-- Obsidian-inspired dark mode with Nunito typography and several purple shades.
-- Frameless rounded normal window with no drop shadow, page fades, custom navigation
-  icons, a rounded animated sidebar marker, and a hand-painted outer shell.
-- The calendar card now physically clips its scroll content to the rounded
-  outline without clipping the curved border itself, and the outer shell leaves
-  a visible one-pixel border around every side of the window, including the sidebar.
-- Maximize now uses Qt's native Windows maximize path, which fills the work area
-  while keeping the taskbar visible. The custom shell and sidebar become square
-  while maximized, and Windows 11 DWM rounding is disabled without forcing a
-  fragile native window region.
-- The Labeling sidebar icon uses a softer single-line rounded folder contour.
-- The sidebar marker now repaints its previous position every animation frame to
-  avoid the thin purple trails shown in the earlier build.
-- The Home calendar includes previous week, Reset, next week, zoom out, and zoom
-  in controls. Reset returns directly to the week containing today.
-- Calendar zoom is persisted in SQLite. Ctrl+wheel over the graph zooms in or
-  out. Shift+wheel over the graph scrolls the main Home page instead. If Ctrl and
-  Shift are both held, Tracky uses whichever modifier was pressed first.
-- The calendar hover card is a single child overlay inside the visible graph
-  viewport instead of a native tooltip window. This avoids the stale layered
-  cards that could appear while moving the cursor quickly.
-- Website hover names show only the domain, never a page path or query string.
-- Activity blocks have a tiny visual gap at confirmed switches so boundaries are
-  easy to see.
-- Foreground switches must remain stable for 60 seconds before Tracky commits a
-  new activity. Shorter switches are folded back into the prior activity so
-  brief Alt-Tab and browser-tab changes do not fragment the timeline.
-- Fresh installs start with exactly two category folders: `Misc` in Tracky purple
-  and `Browsing` in gray. Browser processes without a readable URL default to
-  Browsing.
-- Browser URL validation rejects accidental one-word UI Automation captures such
-  as `colour` or `label`. Existing invalid web rows are converted back to generic
-  browser activity so their tracked time is preserved. Localhost, local test
-  domains, and IP addresses remain supported.
-- A website remains in Browsing for its first ten cumulative minutes. At the
-  exact ten-minute threshold the calendar splits the session. Later time becomes
-  that domain's own activity and defaults to Misc until the user organizes it.
-- Labeling shows collapsible category folders, including empty Misc and Browsing.
-  Activities with less than one cumulative minute stay tracked but are hidden from
-  this page. Website URL detail text is capped at 65 characters. Right-click a
-  custom category folder to delete it; Tracky moves its activities back to Misc
-  first so no tracked history is lost. Misc and Browsing cannot be deleted.
-- The category creator is a frameless popup with Name, ten color circles, and a
-  Custom Colors HEX field. Save and Cancel use Tracky's purple styling.
-- Home uses the headings `Daily total` and `Stats`. Daily Average and Weekly %
-  Difference share the same purple emphasis. Top Category uses that category's
-  saved color.
-- Settings keeps the GitHub star link plus the two-line startup preference:
-  `Launch at startup` and `Runs in the background`
-- Windows executable metadata uses the display name `tracky`, while the Python
-  UI and tracking threads use descriptive diagnostic names.
-- Startup is enabled by default using the current Windows user's Run registry
-  key. No administrator permission is required.
-- The included Inno Setup recipe performs a conventional Program Files install
-  and registers Tracky machine-wide in Windows Settings > Apps > Installed apps.
-
 ## Project layout
 
 ```text
